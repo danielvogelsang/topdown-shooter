@@ -15,10 +15,12 @@ function love.load()
     crosshair = love.graphics.newImage("sprites/crosshair.png")
     life = love.graphics.newImage("sprites/life.png")
     lost_life = love.graphics.newImage("sprites/lost_life.png")
+    blood = love.graphics.newImage("sprites/blood.png")
     game_font = love.graphics.newFont(30)
 
     player = Player()
 
+    bloodpool = {}
     enemies = {}
     bullets = {}
     enemy_timer = Timer(2, spawnEnemy, 0.1, 0.5)
@@ -29,6 +31,7 @@ function love.update(dt)
     if game_state == 1 then
         enemies = {}
         bullets = {}
+        bloodpool = {}
         player:resetPosition()
         player:resetTimers()
         return
@@ -49,12 +52,15 @@ function love.update(dt)
         -- collision with player
         if e.player_hit then
             player:getHit(enemies)
+            spawnBloodpool(player.x, player.y)
          end
+         -- bullet collision with enemy
          for _, b in ipairs(bullets) do
              if e:getBulletDistance(b.x, b.y) < 20 then
+                spawnBloodpool(e.x, e.y)
                 e.is_dead = true
                 b.is_dead = true
-                   score = score + 1
+                score = score + 1
                end
          end
     end
@@ -76,9 +82,13 @@ function love.update(dt)
 end
 
 function love.draw()
-    -------- ALWAYS DRAW --------
+    -------- ALWAYS DRAWN --------
     -- backround
     love.graphics.draw(backround, 0, 0)
+    -- blood
+    for _, v in ipairs(bloodpool) do
+        love.graphics.draw(blood, v.x, v.y, v.rotation, v.scale, v.scale)
+    end
     -- enemies
     for _, e in ipairs(enemies) do
          e:draw()
@@ -102,12 +112,12 @@ function love.draw()
         end
     end
     
-    -------- ONLY DRAW IN MAINMENU --------
+    -------- ONLY DRAWN IN MAINMENU --------
     if game_state == 1 then 
         love.mouse.setVisible(true)
         love.graphics.setFont(game_font)
         love.graphics.printf("Click anywhere to begin!", 0, 50, love.graphics.getWidth(), "center")
-    -------- ONLY DRAW IN GAMELOOP --------
+    -------- ONLY DRAWN IN GAMELOOP --------
     elseif game_state == 2 then
         -- crosshair
         love.graphics.draw(crosshair, love.mouse.getX(), 
@@ -131,4 +141,13 @@ end
 
 function spawnEnemy()
     table.insert(enemies, Enemy())
+end
+
+function spawnBloodpool(entity_x, entity_y)
+    table.insert(bloodpool, {
+        x = entity_x, 
+        y = entity_y, 
+        scale = math.random(15, 20) / 10, 
+        rotation = math.rad(math.random(0, 360))
+        })
 end

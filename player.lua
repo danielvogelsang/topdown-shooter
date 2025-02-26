@@ -73,7 +73,7 @@ function Player:getHit(enemies)
     if self.invulnerable then return end
 
     self.lives = self.lives - 1
-    self:knockbackEnemies(enemies, 100, 200, 0.2)
+    self:knockbackEnemies(enemies, 50, 200, 0.5)
 
     self.invuln_timer = self.invuln_time
 end
