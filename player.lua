@@ -1,0 +1,135 @@
+local Entity = require "entity"
+local Utils = require "utils"
+
+local Player = Entity:extend()
+
+local player_image = love.graphics.newImage("sprites/player.png")
+
+function Player:new(x, y, speed)
+    x = x or love.graphics.getWidth() / 2
+    y = y or love.graphics.getHeight() / 2
+    speed = speed or 200
+    Player.super.new(self, player_image, x, y, speed)
+    self.lives = 3 
+    self.weapon_cd = 1
+    self.weapon_timer = self.weapon_cd
+    self.invuln_time = 1
+    self.invuln_timer = 0
+    self.invulnerable = false
+    self.transparence = 1
+end
+
+function Player:update(dt)
+    self:handleMovement(dt)
+    self:resetPosition()
+    self:updateTimers(dt)
+end
+
+function Player:draw()
+    local color = {1, 1, 1, self.transparence}
+    if game_state == 2 then
+        if self.lives == 2 then
+            color = {0.6, 0, 0, self.transparence}
+        elseif self.lives < 2 then
+            color = {1, 0, 0, self.transparence}
+        end
+    end
+    
+    love.graphics.setColor(color)
+    love.graphics.draw(self.image, self.x, self.y, self:getMouseAngle(),
+    nil, nil, self.offset_width, self.offset_height)
+    love.graphics.setColor(1, 1, 1)
+end
+
+function Player:handleMovement(dt)
+    if love.keyboard.isDown("d")  then
+        if self.x + self.offset_width < love.graphics.getWidth() then
+            self.x = self.x + self.speed * dt
+        end
+    end
+    if love.keyboard.isDown("a") then
+        if self.x - self.offset_width > 0  then
+            self.x = self.x - self.speed * dt
+        end
+    end
+    if love.keyboard.isDown("w") then
+        if self.y - self.offset_width > 0 then
+            self.y = self.y - self.speed * dt
+        end
+    end
+    if love.keyboard.isDown("s") then
+        if self.y + self.offset_width < love.graphics.getHeight() then
+            self.y = self.y + self.speed * dt
+        end
+    end
+end
+
+function Player:getMouseAngle()
+    return Utils.getAngle(self.x, self.y, love.mouse.getX(), love.mouse.getY())
+end
+
+function Player:getHit(enemies)
+    if self.invulnerable then return end
+
+    self.lives = self.lives - 1
+    self:knockbackEnemies(enemies, 100, 200, 0.2)
+
+    self.invuln_timer = self.invuln_time
+end
+
+function Player:knockbackEnemies(enemies, knockbackForce, radius, stun_duration)
+    for _, enemy in ipairs(enemies) do
+        local dx = enemy.x - self.x
+        local dy = enemy.y - self.y
+        local distance = math.sqrt(dx * dx + dy * dy)
+
+        if distance < radius and distance > 0 then 
+            local pushX = (dx / distance) * knockbackForce
+            local pushY = (dy / distance) * knockbackForce
+            enemy.x = enemy.x + pushX
+            enemy.y = enemy.y + pushY
+            enemy.stun_time = stun_duration
+        end
+    end
+end
+
+function Player:resetPosition()
+    if game_state == 1 then
+        self.x = love.graphics.getWidth() / 2
+        self.y = love.graphics.getHeight() / 2
+    end 
+    if self.lives == 0 then
+        game_state = 1
+        self.lives = 3
+    end
+end
+
+function Player:canShoot()
+    if love.mouse.isDown(1) and game_state == 2 then
+        if self.weapon_timer < 0 then
+            self.weapon_timer = self.weapon_cd
+            return true
+        end
+    else 
+        return false
+    end
+end
+
+function Player:updateTimers(dt)
+    -- weapon cooldown
+    if self.weapon_timer and self.weapon_timer > 0 then
+        self.weapon_timer = self.weapon_timer - dt
+    end
+
+    -- invulnerabilty after getting hit
+    if self.invuln_timer and self.invuln_timer > 0 then
+        self.transparence = 0.5
+        self.invuln_timer = self.invuln_timer - dt 
+        self.invulnerable = true
+    else
+        self.invulnerable = false
+        self.transparence = 1
+    end
+end
+
+return Player
