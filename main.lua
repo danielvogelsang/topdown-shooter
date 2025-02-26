@@ -22,49 +22,52 @@ function love.load()
 end
 
 function love.update(dt)
-    player:update(dt)
-    if game_state == 2 then
-        -- enemy spawn timer
-        enemy_timer:update(dt)
-
-        for _, e in ipairs(enemies) do
-            e:update(dt)
-            -- collision with player
-            if e.player_hit then
-                player:getHit(enemies)
-            end
-            for _, b in ipairs(bullets) do
-                if e:getBulletDistance(b.x, b.y) < 20 then
-                    e.is_dead = true
-                    b.is_dead = true
-                    score = score + 1
-                end
-            end
-        end
-        for i = #enemies, 1, -1 do
-            if enemies[i].is_dead then
-                table.remove(enemies, i)
-            end
-        end
-
-        for _, b in ipairs(bullets) do
-            b:update(dt)
-        end
-        for i = #bullets, 1, -1 do
-            if bullets[i].is_dead then
-                table.remove(bullets, i)
-            end
-        end
+    -- resets if in mainmenu
+    if game_state == 1 then
+        enemies = {}
+        bullets = {}
+        player:resetPosition()
+        return
     end
-    
+
+    -- player updates
+    player:update(dt)
     if player:canShoot() then
         table.insert(bullets, Bullet())
     end
 
-    -- clear all tables after game over
-    if game_state == 1 then
-        enemies = {}
-        bullets = {}
+    -- enemy spawn timer
+    enemy_timer:update(dt)
+
+    -- enemy updates
+    for _, e in ipairs(enemies) do
+        e:update(dt)
+        -- collision with player
+        if e.player_hit then
+            player:getHit(enemies)
+         end
+         for _, b in ipairs(bullets) do
+             if e:getBulletDistance(b.x, b.y) < 20 then
+                e.is_dead = true
+                b.is_dead = true
+                   score = score + 1
+               end
+         end
+    end
+    for i = #enemies, 1, -1 do
+        if enemies[i].is_dead then
+            table.remove(enemies, i)
+        end
+    end
+    
+    -- bullet updates
+    for _, b in ipairs(bullets) do
+            b:update(dt)
+    end
+    for i = #bullets, 1, -1 do
+        if bullets[i].is_dead then
+            table.remove(bullets, i)
+         end
     end
 end
 
@@ -92,7 +95,6 @@ function love.draw()
     end
 
     -- DEBUGGING
-    -- enemy spawn timer
     -- love.graphics.print(enemy_timer.time, 10, 100)
 end
 

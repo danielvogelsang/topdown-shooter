@@ -21,8 +21,8 @@ end
 
 function Player:update(dt)
     self:handleMovement(dt)
-    self:resetPosition()
     self:updateTimers(dt)
+    self:dead()
 end
 
 function Player:draw()
@@ -94,14 +94,9 @@ function Player:knockbackEnemies(enemies, knockbackForce, radius, stun_duration)
 end
 
 function Player:resetPosition()
-    if game_state == 1 then
-        self.x = love.graphics.getWidth() / 2
-        self.y = love.graphics.getHeight() / 2
-    end 
-    if self.lives == 0 then
-        game_state = 1
-        self.lives = 3
-    end
+    self.x = love.graphics.getWidth() / 2
+    self.y = love.graphics.getHeight() / 2
+    self.transparence = 1
 end
 
 function Player:canShoot()
@@ -129,6 +124,13 @@ function Player:updateTimers(dt)
     else
         self.invulnerable = false
         self.transparence = 1
+    end
+end
+
+function Player:dead()
+    if self.lives == 0 then
+        game_state = 1
+        self.lives = 3
     end
 end
 
