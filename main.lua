@@ -12,6 +12,9 @@ function love.load()
     score = 0
 
     backround = love.graphics.newImage("sprites/background.png")
+    crosshair = love.graphics.newImage("sprites/crosshair.png")
+    life = love.graphics.newImage("sprites/life.png")
+    lost_life = love.graphics.newImage("sprites/lost_life.png")
     game_font = love.graphics.newFont(30)
 
     player = Player()
@@ -27,6 +30,7 @@ function love.update(dt)
         enemies = {}
         bullets = {}
         player:resetPosition()
+        player:resetTimers()
         return
     end
 
@@ -72,6 +76,7 @@ function love.update(dt)
 end
 
 function love.draw()
+    -------- ALWAYS DRAW --------
     -- backround
     love.graphics.draw(backround, 0, 0)
     -- enemies
@@ -87,11 +92,28 @@ function love.draw()
     -- score
     love.graphics.print("Score: " .. score, 10, 10)
     -- lives
-    love.graphics.print("Lives: " .. player.lives, 10, 50)
-
-    if game_state == 1 then
+    for i = 1, player.max_lives do
+        -- full hearts
+        if i <= player.lives then
+            love.graphics.draw(life, 5 + (i - 1) * 30, 50, nil, 2, 2)
+        -- lost hearts
+        else
+            love.graphics.draw(lost_life, 5 + (i - 1) * 30, 50, nil, 2, 2)
+        end
+    end
+    
+    -------- ONLY DRAW IN MAINMENU --------
+    if game_state == 1 then 
+        love.mouse.setVisible(true)
         love.graphics.setFont(game_font)
         love.graphics.printf("Click anywhere to begin!", 0, 50, love.graphics.getWidth(), "center")
+    -------- ONLY DRAW IN GAMELOOP --------
+    elseif game_state == 2 then
+        -- crosshair
+        love.graphics.draw(crosshair, love.mouse.getX(), 
+        love.mouse.getY(), nil, 0.5, 0.5, crosshair:getWidth() / 2,
+        crosshair:getHeight() / 2)
+        love.mouse.setVisible(false)
     end
 
     -- DEBUGGING

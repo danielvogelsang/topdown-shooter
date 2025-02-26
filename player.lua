@@ -10,7 +10,8 @@ function Player:new(x, y, speed)
     y = y or love.graphics.getHeight() / 2
     speed = speed or 200
     Player.super.new(self, player_image, x, y, speed)
-    self.lives = 3 
+    self.max_lives = 3
+    self.lives = self.max_lives 
     self.weapon_cd = 1
     self.weapon_timer = self.weapon_cd
     self.invuln_time = 1
@@ -96,7 +97,6 @@ end
 function Player:resetPosition()
     self.x = love.graphics.getWidth() / 2
     self.y = love.graphics.getHeight() / 2
-    self.transparence = 1
 end
 
 function Player:canShoot()
@@ -125,6 +125,12 @@ function Player:updateTimers(dt)
         self.invulnerable = false
         self.transparence = 1
     end
+end
+
+function Player:resetTimers()
+    self.invuln_timer = 0
+    self.invulnerable = false
+    self.transparence = 1
 end
 
 function Player:dead()
