@@ -50,18 +50,18 @@ function love.update(dt)
     for _, e in ipairs(enemies) do
         e:update(dt)
         -- collision with player
-        if e.player_hit then
-            player:getHit(enemies)
+        if player:checkEnemyCollision(e.x, e.y) then
+            player:getHit()
             spawnBloodpool(player.x, player.y)
-         end
-         -- bullet collision with enemy
-         for _, b in ipairs(bullets) do
-             if e:getBulletDistance(b.x, b.y) < 20 then
+        end
+        -- bullet collision with enemy
+        for _, b in ipairs(bullets) do
+            if e:getBulletDistance(b.x, b.y) < 20 then
                 spawnBloodpool(e.x, e.y)
                 e.is_dead = true
                 b.is_dead = true
                 score = score + 1
-               end
+            end
          end
     end
     for i = #enemies, 1, -1 do

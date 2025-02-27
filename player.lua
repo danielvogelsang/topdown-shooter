@@ -73,22 +73,18 @@ function Player:getHit(enemies)
     if self.invulnerable then return end
 
     self.lives = self.lives - 1
-    self:knockbackEnemies(enemies, 50, 200, 0.5)
+    self:knockbackEnemies(200, 0.2)
 
     self.invuln_timer = self.invuln_time
 end
 
-function Player:knockbackEnemies(enemies, knockbackForce, radius, stun_duration)
+function Player:knockbackEnemies(radius, stun_duration)
     for _, enemy in ipairs(enemies) do
         local dx = enemy.x - self.x
         local dy = enemy.y - self.y
         local distance = math.sqrt(dx * dx + dy * dy)
 
         if distance < radius and distance > 0 then 
-            local pushX = (dx / distance) * knockbackForce
-            local pushY = (dy / distance) * knockbackForce
-            enemy.x = enemy.x + pushX
-            enemy.y = enemy.y + pushY
             enemy.stun_time = stun_duration
         end
     end
@@ -137,6 +133,12 @@ function Player:dead()
     if self.lives == 0 then
         game_state = 1
         self.lives = 3
+    end
+end
+
+function Player:checkEnemyCollision(enemy_x, enemy_y)
+    if Utils.distanceBetween(enemy_x, enemy_y, player.x, player.y) < 30 then
+        return true
     end
 end
 

@@ -13,18 +13,14 @@ function Enemy:new(x, y, speed)
     end
     speed = speed or 100
     Enemy.super.new(self, enemy_image, x, y, speed)
-    self.player_hit = false
-    self.enemy_collide = false
+    --self.player_hit = false
     self.stun_time = nil
+    self.knockback_force = -500
 end
 
 function Enemy:update(dt)
-    if self.stun_time and self.stun_time > 0 then
-        self.stun_time = self.stun_time - dt 
-        return
-    end
-    self:handleMovement(dt)
-    self:getPlayerDistance()
+    if self:handleStun(dt) then return end
+    self:handleMovement(dt, self.speed)
 end
 
 function Enemy:draw()
@@ -32,9 +28,9 @@ function Enemy:draw()
     nil, nil, self.offset_width, self.offset_height)
 end
 
-function Enemy:handleMovement(dt)
-    local change_in_x = math.cos(self:getPlayerAngle()) * self.speed
-    local change_in_y = math.sin(self:getPlayerAngle()) * self.speed
+function Enemy:handleMovement(dt, speed)
+    local change_in_x = math.cos(self:getPlayerAngle()) * speed
+    local change_in_y = math.sin(self:getPlayerAngle()) * speed
     self.x = self.x + change_in_x * dt
     self.y = self.y + change_in_y * dt
 
@@ -60,13 +56,6 @@ end
 
 function Enemy:getPlayerAngle()
     return Utils.getAngle(self.x, self.y, player.x, player.y)
-end
-
-function Enemy:getPlayerDistance()
-    if Utils.distanceBetween(self.x, self.y, player.x, player.y) < 30 then
-        self.is_dead = true
-        self.player_hit = true
-    end
 end
 
 function Enemy:getBulletDistance(bullet_x, bullet_y)
@@ -95,6 +84,14 @@ function Enemy:getRandomPosition()
     end
 
     return x, y
+end
+
+function Enemy:handleStun(dt)
+    if self.stun_time and self.stun_time > 0 then
+        self.stun_time = self.stun_time - dt 
+        self:handleMovement(dt, self.knockback_force)
+        return true
+    end
 end
 
 return Enemy
