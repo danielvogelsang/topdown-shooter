@@ -52,7 +52,9 @@ function love.update(dt)
         -- collision with player
         if player:checkEnemyCollision(e.x, e.y) then
             player:getHit()
-            spawnBloodpool(player.x, player.y)
+            if not player.invulnerable then
+                spawnBloodpool(player.x, player.y)
+            end
         end
         -- bullet collision with enemy
         for _, b in ipairs(bullets) do

@@ -69,23 +69,22 @@ function Player:getMouseAngle()
     return Utils.getAngle(self.x, self.y, love.mouse.getX(), love.mouse.getY())
 end
 
-function Player:getHit(enemies)
+function Player:getHit()
     if self.invulnerable then return end
-
-    self.lives = self.lives - 1
-    self:knockbackEnemies(200, 0.2)
-
     self.invuln_timer = self.invuln_time
+    self.invulnerable = true
+    self:knockbackEnemies(200)
+    self.lives = self.lives - 1
 end
 
-function Player:knockbackEnemies(radius, stun_duration)
+function Player:knockbackEnemies(radius)
     for _, enemy in ipairs(enemies) do
         local dx = enemy.x - self.x
         local dy = enemy.y - self.y
         local distance = math.sqrt(dx * dx + dy * dy)
 
         if distance < radius and distance > 0 then 
-            enemy.stun_time = stun_duration
+            enemy.stun_time = enemy.stun_duration
         end
     end
 end
@@ -116,7 +115,6 @@ function Player:updateTimers(dt)
     if self.invuln_timer and self.invuln_timer > 0 then
         self.transparence = 0.5
         self.invuln_timer = self.invuln_timer - dt 
-        self.invulnerable = true
     else
         self.invulnerable = false
         self.transparence = 1
@@ -130,7 +128,7 @@ function Player:resetTimers()
 end
 
 function Player:dead()
-    if self.lives == 0 then
+    if self.lives <= 0 then
         game_state = 1
         self.lives = 3
     end

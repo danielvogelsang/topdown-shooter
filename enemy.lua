@@ -13,7 +13,7 @@ function Enemy:new(x, y, speed)
     end
     speed = speed or 100
     Enemy.super.new(self, enemy_image, x, y, speed)
-    --self.player_hit = false
+    self.stun_duration = 0.2
     self.stun_time = nil
     self.knockback_force = -500
 end
