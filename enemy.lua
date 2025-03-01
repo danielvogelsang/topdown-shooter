@@ -1,6 +1,8 @@
 local Entity = require "entity"
 local Utils = require "utils"
 local Timer = require "timer"
+local Utils = require "utils"
+local Globals = require "globals"
 
 local Enemy = Entity:extend()
 local timer = Timer(2)
@@ -39,7 +41,7 @@ end
 
 function Enemy:avoidOtherEnemies()
     local minDistance = 30
-    for _, other in ipairs(enemies) do
+    for _, other in ipairs(Globals.TABLES.ENEMIES) do
         if other ~= self then
             local distX = self.x - other.x
             local distY = self.y - other.y
@@ -65,19 +67,19 @@ end
 function Enemy:getRandomPosition()
     local x, y
     local side = math.random(1, 4)
-    -- left
+    -- Left
     if side == 1 then
         x = -30
         y = math.random(0, love.graphics.getHeight())
-    -- right
+    -- Right
     elseif side == 2 then
         x = love.graphics.getWidth() + 30
         y = math.random(0, love.graphics.getHeight())
-    -- top
+    -- Top
     elseif side == 3 then
         x = math.random(0, love.graphics.getWidth())
         y = -30
-    -- bottom
+    -- Bottom
     elseif side == 4 then
         x = math.random(0, love.graphics.getWidth())
         y = love.graphics.getHeight() + 30

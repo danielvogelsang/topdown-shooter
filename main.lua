@@ -1,4 +1,5 @@
 Object = require "classic"
+local Globals = require "globals"
 local Player = require "player"
 local Enemy = require "enemy"
 local Bullet = require "bullet"
@@ -7,59 +8,44 @@ local Timer = require "timer"
 math.randomseed(os.time())
 
 function love.load()
-    -- 1 = mainmenu, 2 = gameloop
-    game_state = 1
-
-    backround = love.graphics.newImage("sprites/background.png")
-    crosshair = love.graphics.newImage("sprites/crosshair.png")
-    life = love.graphics.newImage("sprites/life.png")
-    lost_life = love.graphics.newImage("sprites/lost_life.png")
-    blood = love.graphics.newImage("sprites/blood.png")
-    experience = love.graphics.newImage("sprites/experience.png")
-    game_font = love.graphics.newFont(30)
+    Globals.setState(Globals.GAME_STATE.MENU)
 
     player = Player()
-
-    exp = {}
-    bloodpool = {}
-    enemies = {}
-    bullets = {}
     enemy_timer = Timer(2, spawnEnemy, 0.1, 2)
 end
 
 function love.update(dt)
-    -- resets if in mainmenu
-    if game_state == 1 then
-        enemies = {}
-        bullets = {}
-        bloodpool = {}
-        exp = {}
+    -- Resets if in mainmenu
+    if Globals.current_state == Globals.GAME_STATE.MENU then
+        Globals:resetTables()
         player:resetPosition()
         player:resetTimers()
         return
     end
 
-    -- player updates
+    -- Player updates
     player:update(dt)
     if player:canShoot() then
-        table.insert(bullets, Bullet())
+        table.insert(Globals.TABLES.BULLETS, Bullet())
     end
 
-    -- enemy spawn timer
+    -- Enemy spawn timer
     enemy_timer:update(dt)
 
-    -- enemy updates
+    -- Enemy updates
+    local enemies = Globals:getTable("ENEMIES")
     for _, e in ipairs(enemies) do
         e:update(dt)
-        -- collision with player
+        -- Collision with player
         if player:checkEnemyCollision(e.x, e.y) then
             player:getHit()
+            -- Currently does nothing as invulnerable gets instantly set to true again
             if not player.invulnerable then
                 spawnBloodpool(player.x, player.y)
             end
         end
-        -- bullet collision with enemy
-        for _, b in ipairs(bullets) do
+        -- Bullet collision with enemy
+        for _, b in ipairs(Globals.TABLES.BULLETS) do
             if e:getBulletDistance(b.x, b.y) < 20 then
                 spawnBloodpool(e.x, e.y)
                 e.is_dead = true
@@ -74,7 +60,8 @@ function love.update(dt)
         end
     end
     
-    -- bullet updates
+    -- Bullet updates
+    local bullets = Globals:getTable("BULLETS")
     for _, b in ipairs(bullets) do
             b:update(dt)
     end
@@ -83,7 +70,8 @@ function love.update(dt)
             table.remove(bullets, i)
          end
     end
-    -- exp updates
+    -- Exp updates
+    local exp = Globals:getTable("EXP")
     for i = #exp, 1, -1 do
         if player:checkExpDistance(exp[i].x, exp[i].y) then
             local change_in_x = math.cos(player:getExpAngle(exp[i].x, exp[i].y)) * 100
@@ -99,50 +87,50 @@ end
 
 function love.draw()
     -------- ALWAYS DRAWN --------
-    -- backround
-    love.graphics.draw(backround, 0, 0)
-    -- blood
-    for _, v in ipairs(bloodpool) do
-        love.graphics.draw(blood, v.x, v.y, v.rotation, v.scale, v.scale, v.ox, v.oy)
+    -- Background
+    love.graphics.draw(Globals.SPRITES.BACKGROUND, 0, 0)
+    -- Blood
+    for _, v in ipairs(Globals.TABLES.BLOODPOOL) do
+        love.graphics.draw(Globals.SPRITES.BLOOD, v.x, v.y, v.rotation, v.scale, v.scale, v.ox, v.oy)
     end
-    -- exp
-    for _, v in ipairs(exp) do
-        love.graphics.draw(experience, v.x, v.y, v.rotation, v.scale, v.scale, v.ox, v.oy)
+    -- Exp
+    for _, v in ipairs(Globals.TABLES.EXP) do
+        love.graphics.draw(Globals.SPRITES.EXPERIENCE, v.x, v.y, v.rotation, v.scale, v.scale, v.ox, v.oy)
     end
-    -- enemies
-    for _, e in ipairs(enemies) do
+    -- Enemies
+    for _, e in ipairs(Globals.TABLES.ENEMIES) do
          e:draw()
     end
-    -- bullets
-    for _, b in ipairs(bullets) do
+    -- Bullets
+    for _, b in ipairs(Globals.TABLES.BULLETS) do
         b:draw()
     end
-    -- player
+    -- Player
     player:draw()
-    -- exp "bar"
+    -- Exp "bar"
     love.graphics.print("Experience: " .. player.exp, 10, 10)
-    -- lives
+    -- Lives
     for i = 1, player.max_lives do
-        -- full hearts
+        -- Full hearts
         if i <= player.lives then
-            love.graphics.draw(life, 5 + (i - 1) * 30, 50, nil, 2, 2)
-        -- lost hearts
+            love.graphics.draw(Globals.SPRITES.LIFE, 5 + (i - 1) * 30, 50, nil, 2, 2)
+        -- Lost hearts
         else
-            love.graphics.draw(lost_life, 5 + (i - 1) * 30, 50, nil, 2, 2)
+            love.graphics.draw(Globals.SPRITES.LOST_LIFE, 5 + (i - 1) * 30, 50, nil, 2, 2)
         end
     end
     
     -------- ONLY DRAWN IN MAINMENU --------
-    if game_state == 1 then 
+    if Globals.current_state == Globals.GAME_STATE.MENU then 
         love.mouse.setVisible(true)
-        love.graphics.setFont(game_font)
+        love.graphics.setFont(Globals.FONTS.FONTSIZE)
         love.graphics.printf("Click anywhere to begin!", 0, 50, love.graphics.getWidth(), "center")
     -------- ONLY DRAWN IN GAMELOOP --------
-    elseif game_state == 2 then
-        -- crosshair
-        love.graphics.draw(crosshair, love.mouse.getX(), 
-        love.mouse.getY(), nil, 0.5, 0.5, crosshair:getWidth() / 2,
-        crosshair:getHeight() / 2)
+    elseif Globals.current_state == Globals.GAME_STATE.GAME then
+        -- Crosshair
+        love.graphics.draw(Globals.SPRITES.CROSSHAIR, love.mouse.getX(), 
+        love.mouse.getY(), nil, 0.5, 0.5, Globals.SPRITES.CROSSHAIR:getWidth() / 2,
+        Globals.SPRITES.CROSSHAIR:getHeight() / 2)
         love.mouse.setVisible(false)
     end
 
@@ -151,36 +139,36 @@ function love.draw()
 end
 
 function love.mousepressed(x, y, button)
-    -- change from mainmenu to game
-    if button == 1 and game_state == 1 then
-        game_state = 2
+    -- Change from mainmenu to game
+    if button == 1 and Globals.current_state == Globals.GAME_STATE.MENU then
+        Globals.setState(Globals.GAME_STATE.GAME)
         player.experience = 0
         enemy_timer.time = 2
     end
 end
 
 function spawnEnemy()
-    table.insert(enemies, Enemy())
+    table.insert(Globals.TABLES.ENEMIES, Enemy())
 end
 
 function spawnBloodpool(entity_x, entity_y)
-    table.insert(bloodpool, {
-        x = entity_x, 
-        y = entity_y, 
-        scale = math.random(15, 20) / 10, 
+    table.insert(Globals.TABLES.BLOODPOOL, {
+        x = entity_x,
+        y = entity_y,
+        scale = math.random(15, 20) / 10,
         rotation = math.rad(math.random(0, 360)),
-        ox = blood:getWidth() / 2,
-        oy = blood:getHeight() / 2
+        ox = Globals.SPRITES.BLOOD:getWidth() / 2,
+        oy = Globals.SPRITES.BLOOD:getHeight() / 2
         })
 end
 
 function spawnExp(entity_x, entity_y)
-    table.insert(exp, {
+    table.insert(Globals.TABLES.EXP, {
         x = entity_x + math.random(-10, 10), 
         y = entity_y + math.random(-10, 10), 
         scale = 1.2, 
         rotation = math.rad(math.random(0, 360)),
-        ox = experience:getWidth() / 2,
-        oy = experience:getHeight() / 2
+        ox = Globals.SPRITES.EXPERIENCE:getWidth() / 2,
+        oy = Globals.SPRITES.EXPERIENCE:getHeight() / 2
         })
 end

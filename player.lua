@@ -1,5 +1,6 @@
 local Entity = require "entity"
 local Utils = require "utils"
+local Globals = require "globals"
 
 local Player = Entity:extend()
 
@@ -68,7 +69,7 @@ function Player:getHit()
 end
 
 function Player:knockbackEnemies(radius)
-    for _, enemy in ipairs(enemies) do
+    for _, enemy in ipairs(Globals.TABLES.ENEMIES) do
         local dx = enemy.x - self.x
         local dy = enemy.y - self.y
         local distance = math.sqrt(dx * dx + dy * dy)
@@ -82,10 +83,11 @@ end
 function Player:resetPosition()
     self.x = love.graphics.getWidth() / 2
     self.y = love.graphics.getHeight() / 2
+    self.exp = 0
 end
 
 function Player:canShoot()
-    if love.mouse.isDown(1) and game_state == 2 then
+    if love.mouse.isDown(1) and Globals.current_state == Globals.GAME_STATE.GAME then
         if self.weapon_timer < 0 then
             self.weapon_timer = self.weapon_cd
             return true
@@ -96,12 +98,12 @@ function Player:canShoot()
 end
 
 function Player:updateTimers(dt)
-    -- weapon cooldown
+    -- Weapon cooldown
     if self.weapon_timer and self.weapon_timer > 0 then
         self.weapon_timer = self.weapon_timer - dt
     end
 
-    -- invulnerabilty after getting hit
+    -- Invulnerabilty after getting hit
     if self.invuln_timer and self.invuln_timer > 0 then
         self.transparence = 0.5
         self.invuln_timer = self.invuln_timer - dt 
@@ -119,7 +121,7 @@ end
 
 function Player:dead()
     if self.lives <= 0 then
-        game_state = 1
+        Globals.setState(Globals.GAME_STATE.MENU)
         self.lives = 3
     end
 end
@@ -141,7 +143,7 @@ function Player:getExpAngle(exp_x, exp_y)
 end
 
 function Player:collectExp(exp_x, exp_y)
-    if Utils.distanceBetween(exp_x, exp_y, self.x, self.y) < 5 then
+    if Utils.distanceBetween(exp_x, exp_y, self.x, self.y) < 10 then
         self.exp = self.exp + 1
         return true
     end
