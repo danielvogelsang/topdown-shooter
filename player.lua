@@ -18,6 +18,7 @@ function Player:new(x, y, speed)
     self.invuln_timer = 0
     self.invulnerable = false
     self.transparence = 1
+    self.exp = 0
 end
 
 function Player:update(dt)
@@ -27,19 +28,8 @@ function Player:update(dt)
 end
 
 function Player:draw()
-    local color = {1, 1, 1, self.transparence}
-    if game_state == 2 then
-        if self.lives == 2 then
-            color = {0.6, 0, 0, self.transparence}
-        elseif self.lives < 2 then
-            color = {1, 0, 0, self.transparence}
-        end
-    end
-    
-    love.graphics.setColor(color)
     love.graphics.draw(self.image, self.x, self.y, self:getMouseAngle(),
     nil, nil, self.offset_width, self.offset_height)
-    love.graphics.setColor(1, 1, 1)
 end
 
 function Player:handleMovement(dt)
@@ -135,9 +125,28 @@ function Player:dead()
 end
 
 function Player:checkEnemyCollision(enemy_x, enemy_y)
-    if Utils.distanceBetween(enemy_x, enemy_y, player.x, player.y) < 30 then
+    if Utils.distanceBetween(enemy_x, enemy_y, self.x, self.y) < 30 then
         return true
     end
 end
+
+function Player:checkExpDistance(exp_x, exp_y)
+    if Utils.distanceBetween(exp_x, exp_y, self.x, self.y) < 100 then
+        return true
+    end
+end
+
+function Player:getExpAngle(exp_x, exp_y)
+    return Utils.getAngle(exp_x, exp_y, self.x, self.y)
+end
+
+function Player:collectExp(exp_x, exp_y)
+    if Utils.distanceBetween(exp_x, exp_y, self.x, self.y) < 5 then
+        self.exp = self.exp + 1
+        return true
+    end
+end
+
+
 
 return Player

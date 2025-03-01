@@ -9,21 +9,22 @@ math.randomseed(os.time())
 function love.load()
     -- 1 = mainmenu, 2 = gameloop
     game_state = 1
-    score = 0
 
     backround = love.graphics.newImage("sprites/background.png")
     crosshair = love.graphics.newImage("sprites/crosshair.png")
     life = love.graphics.newImage("sprites/life.png")
     lost_life = love.graphics.newImage("sprites/lost_life.png")
     blood = love.graphics.newImage("sprites/blood.png")
+    experience = love.graphics.newImage("sprites/experience.png")
     game_font = love.graphics.newFont(30)
 
     player = Player()
 
+    exp = {}
     bloodpool = {}
     enemies = {}
     bullets = {}
-    enemy_timer = Timer(2, spawnEnemy, 0.1, 0.5)
+    enemy_timer = Timer(2, spawnEnemy, 0.1, 2)
 end
 
 function love.update(dt)
@@ -32,6 +33,7 @@ function love.update(dt)
         enemies = {}
         bullets = {}
         bloodpool = {}
+        exp = {}
         player:resetPosition()
         player:resetTimers()
         return
@@ -62,12 +64,12 @@ function love.update(dt)
                 spawnBloodpool(e.x, e.y)
                 e.is_dead = true
                 b.is_dead = true
-                score = score + 1
             end
          end
     end
     for i = #enemies, 1, -1 do
         if enemies[i].is_dead then
+            spawnExp(enemies[i].x, enemies[i].y)
             table.remove(enemies, i)
         end
     end
@@ -81,6 +83,18 @@ function love.update(dt)
             table.remove(bullets, i)
          end
     end
+    -- exp updates
+    for i = #exp, 1, -1 do
+        if player:checkExpDistance(exp[i].x, exp[i].y) then
+            local change_in_x = math.cos(player:getExpAngle(exp[i].x, exp[i].y)) * 100
+            local change_in_y = math.sin(player:getExpAngle(exp[i].x, exp[i].y)) * 100
+            exp[i].x = exp[i].x + change_in_x * dt
+            exp[i].y = exp[i].y + change_in_y * dt
+         end
+        if player:collectExp(exp[i].x, exp[i].y) then
+            table.remove(exp, i)
+        end
+    end
 end
 
 function love.draw()
@@ -89,7 +103,11 @@ function love.draw()
     love.graphics.draw(backround, 0, 0)
     -- blood
     for _, v in ipairs(bloodpool) do
-        love.graphics.draw(blood, v.x, v.y, v.rotation, v.scale, v.scale)
+        love.graphics.draw(blood, v.x, v.y, v.rotation, v.scale, v.scale, v.ox, v.oy)
+    end
+    -- exp
+    for _, v in ipairs(exp) do
+        love.graphics.draw(experience, v.x, v.y, v.rotation, v.scale, v.scale, v.ox, v.oy)
     end
     -- enemies
     for _, e in ipairs(enemies) do
@@ -101,8 +119,8 @@ function love.draw()
     end
     -- player
     player:draw()
-    -- score
-    love.graphics.print("Score: " .. score, 10, 10)
+    -- exp "bar"
+    love.graphics.print("Experience: " .. player.exp, 10, 10)
     -- lives
     for i = 1, player.max_lives do
         -- full hearts
@@ -136,7 +154,7 @@ function love.mousepressed(x, y, button)
     -- change from mainmenu to game
     if button == 1 and game_state == 1 then
         game_state = 2
-        score = 0
+        player.experience = 0
         enemy_timer.time = 2
     end
 end
@@ -150,6 +168,19 @@ function spawnBloodpool(entity_x, entity_y)
         x = entity_x, 
         y = entity_y, 
         scale = math.random(15, 20) / 10, 
-        rotation = math.rad(math.random(0, 360))
+        rotation = math.rad(math.random(0, 360)),
+        ox = blood:getWidth() / 2,
+        oy = blood:getHeight() / 2
+        })
+end
+
+function spawnExp(entity_x, entity_y)
+    table.insert(exp, {
+        x = entity_x + math.random(-10, 10), 
+        y = entity_y + math.random(-10, 10), 
+        scale = 1.2, 
+        rotation = math.rad(math.random(0, 360)),
+        ox = experience:getWidth() / 2,
+        oy = experience:getHeight() / 2
         })
 end
