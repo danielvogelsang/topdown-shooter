@@ -5,6 +5,8 @@ local Enemy = require "enemy"
 local Bullet = require "bullet"
 local Timer = require "timer"
 local GameManager = require "gamemanager"
+local Event = require "eventsystem"
+local Exp = require "exp"
 
 math.randomseed(os.time())
 
@@ -19,14 +21,18 @@ function love.update(dt)
         Globals:resetTables()
         player:resetPosition()
         player:resetTimers()
-        return
     end
 
     -- Player updates
     player:update(dt)
-    if player:canShoot() then
+    if player:canShoot() and GameManager:inGame() then
         table.insert(Globals.TABLES.BULLETS, Bullet())
     end
+    -- on player death
+    Event:on("PlayerDied", function()
+            GameManager:setState(GameManager.GAME_STATE.MENU)
+            end
+            )
 
     -- Enemy spawn timer
     enemy_timer:update(dt)
@@ -34,10 +40,10 @@ function love.update(dt)
     -- Enemy updates
     local enemies = Globals:getTable("ENEMIES")
     for _, e in ipairs(enemies) do
-        e:update(dt)
+        e:update(dt, enemies)
         -- Collision with player
         if player:checkEnemyCollision(e.x, e.y) then
-            player:getHit()
+            player:getHit(Globals.TABLES.ENEMIES)
             -- Currently does nothing as invulnerable gets instantly set to true again
             if not player.invulnerable then
                 spawnBloodpool(player.x, player.y)
@@ -54,7 +60,7 @@ function love.update(dt)
     end
     for i = #enemies, 1, -1 do
         if enemies[i].is_dead then
-            spawnExp(enemies[i].x, enemies[i].y)
+            spawnExp(enemies[i])
             table.remove(enemies, i)
         end
     end
@@ -72,13 +78,8 @@ function love.update(dt)
     -- Exp updates
     local exp = Globals:getTable("EXP")
     for i = #exp, 1, -1 do
-        if player:checkExpDistance(exp[i].x, exp[i].y) then
-            local change_in_x = math.cos(player:getExpAngle(exp[i].x, exp[i].y)) * 100
-            local change_in_y = math.sin(player:getExpAngle(exp[i].x, exp[i].y)) * 100
-            exp[i].x = exp[i].x + change_in_x * dt
-            exp[i].y = exp[i].y + change_in_y * dt
-         end
-        if player:collectExp(exp[i].x, exp[i].y) then
+        exp[i]:update(dt, player)
+        if exp[i]:canCollect(player) then
             table.remove(exp, i)
         end
     end
@@ -94,7 +95,7 @@ function love.draw()
     end
     -- Exp
     for _, v in ipairs(Globals.TABLES.EXP) do
-        love.graphics.draw(Globals.SPRITES.EXPERIENCE, v.x, v.y, v.rotation, v.scale, v.scale, v.ox, v.oy)
+        v:draw()
     end
     -- Enemies
     for _, e in ipairs(Globals.TABLES.ENEMIES) do
@@ -120,7 +121,7 @@ function love.draw()
     end
 
     -------- ONLY DRAWN IN MAINMENU --------
-    if GameManager:inMenu() then 
+    if GameManager:inMenu() then
         love.mouse.setVisible(true)
         love.graphics.setFont(Globals.FONTS.FONTSIZE)
         love.graphics.printf("Click anywhere to begin!", 0, 50, love.graphics.getWidth(), "center")
@@ -134,7 +135,8 @@ function love.draw()
     end
 
     -- DEBUGGING
-    -- love.graphics.print(enemy_timer.time, 10, 100)
+     love.graphics.print(GameManager.current_state, 10, 100)
+
 end
 
 function love.mousepressed(x, y, button)
@@ -161,13 +163,6 @@ function spawnBloodpool(entity_x, entity_y)
         })
 end
 
-function spawnExp(entity_x, entity_y)
-    table.insert(Globals.TABLES.EXP, {
-        x = entity_x + math.random(-10, 10), 
-        y = entity_y + math.random(-10, 10), 
-        scale = 1.2, 
-        rotation = math.rad(math.random(0, 360)),
-        ox = Globals.SPRITES.EXPERIENCE:getWidth() / 2,
-        oy = Globals.SPRITES.EXPERIENCE:getHeight() / 2
-        })
+function spawnExp(enemy)
+    table.insert(Globals.TABLES.EXP, Exp(enemy, enemy.exp_value))
 end

@@ -1,11 +1,7 @@
 local Entity = require "entity"
 local Utils = require "utils"
-local Timer = require "timer"
-local Utils = require "utils"
-local Globals = require "globals"
 
 local Enemy = Entity:extend()
-local timer = Timer(2)
 
 local enemy_image = love.graphics.newImage("sprites/zombie.png")
 
@@ -18,11 +14,12 @@ function Enemy:new(x, y, speed)
     self.stun_duration = 0.2
     self.stun_time = nil
     self.knockback_force = -500
+    self.exp_value = 1
 end
 
-function Enemy:update(dt)
-    if self:handleStun(dt) then return end
-    self:handleMovement(dt, self.speed)
+function Enemy:update(dt, enemy_table)
+    if self:handleStun(dt, enemy_table) then return end
+    self:handleMovement(dt, self.speed, enemy_table)
 end
 
 function Enemy:draw()
@@ -30,18 +27,18 @@ function Enemy:draw()
     nil, nil, self.offset_width, self.offset_height)
 end
 
-function Enemy:handleMovement(dt, speed)
+function Enemy:handleMovement(dt, speed, enemy_table)
     local change_in_x = math.cos(self:getPlayerAngle()) * speed
     local change_in_y = math.sin(self:getPlayerAngle()) * speed
     self.x = self.x + change_in_x * dt
     self.y = self.y + change_in_y * dt
 
-    self:avoidOtherEnemies()
+    self:avoidOtherEnemies(enemy_table)
 end
 
-function Enemy:avoidOtherEnemies()
+function Enemy:avoidOtherEnemies(enemy_table)
     local minDistance = 30
-    for _, other in ipairs(Globals.TABLES.ENEMIES) do
+    for _, other in ipairs(enemy_table) do
         if other ~= self then
             local distX = self.x - other.x
             local distY = self.y - other.y
@@ -88,10 +85,10 @@ function Enemy:getRandomPosition()
     return x, y
 end
 
-function Enemy:handleStun(dt)
+function Enemy:handleStun(dt, enemy_table)
     if self.stun_time and self.stun_time > 0 then
         self.stun_time = self.stun_time - dt 
-        self:handleMovement(dt, self.knockback_force)
+        self:handleMovement(dt, self.knockback_force, enemy_table)
         return true
     end
 end

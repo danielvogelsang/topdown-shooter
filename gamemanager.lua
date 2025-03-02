@@ -1,3 +1,5 @@
+local Event = require "eventsystem"
+
 local GameManager = {}
 
 -- Game States
@@ -9,7 +11,10 @@ GameManager.GAME_STATE = {
 -- Default State
 GameManager.current_state = GameManager.GAME_STATE.MENU
 
+
 function GameManager:setState(new_state)
+    if self.current_state == new_state then return end
+
     self.current_state = new_state
 end
 

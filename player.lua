@@ -1,7 +1,6 @@
 local Entity = require "entity"
 local Utils = require "utils"
-local Globals = require "globals"
-local GameManager= require "gamemanager"
+local Event = require "eventsystem"
 
 local Player = Entity:extend()
 
@@ -61,16 +60,16 @@ function Player:getMouseAngle()
     return Utils.getAngle(self.x, self.y, love.mouse.getX(), love.mouse.getY())
 end
 
-function Player:getHit()
+function Player:getHit(enemy_table)
     if self.invulnerable then return end
     self.invuln_timer = self.invuln_time
     self.invulnerable = true
-    self:knockbackEnemies(200)
+    self:knockbackEnemies(200, enemy_table)
     self.lives = self.lives - 1
 end
 
-function Player:knockbackEnemies(radius)
-    for _, enemy in ipairs(Globals.TABLES.ENEMIES) do
+function Player:knockbackEnemies(radius, enemy_table)
+    for _, enemy in ipairs(enemy_table) do
         local dx = enemy.x - self.x
         local dy = enemy.y - self.y
         local distance = math.sqrt(dx * dx + dy * dy)
@@ -88,7 +87,7 @@ function Player:resetPosition()
 end
 
 function Player:canShoot()
-    if love.mouse.isDown(1) and GameManager:inGame() then
+    if love.mouse.isDown(1) then
         if self.weapon_timer < 0 then
             self.weapon_timer = self.weapon_cd
             return true
@@ -122,7 +121,7 @@ end
 
 function Player:dead()
     if self.lives <= 0 then
-        GameManager:setState(GameManager.GAME_STATE.MENU)
+        Event:emit("PlayerDied")
         self.lives = 3
     end
 end
@@ -132,24 +131,5 @@ function Player:checkEnemyCollision(enemy_x, enemy_y)
         return true
     end
 end
-
-function Player:checkExpDistance(exp_x, exp_y)
-    if Utils.distanceBetween(exp_x, exp_y, self.x, self.y) < 100 then
-        return true
-    end
-end
-
-function Player:getExpAngle(exp_x, exp_y)
-    return Utils.getAngle(exp_x, exp_y, self.x, self.y)
-end
-
-function Player:collectExp(exp_x, exp_y)
-    if Utils.distanceBetween(exp_x, exp_y, self.x, self.y) < 10 then
-        self.exp = self.exp + 1
-        return true
-    end
-end
-
-
 
 return Player
