@@ -4,19 +4,18 @@ local Player = require "player"
 local Enemy = require "enemy"
 local Bullet = require "bullet"
 local Timer = require "timer"
+local GameManager = require "gamemanager"
 
 math.randomseed(os.time())
 
 function love.load()
-    Globals.setState(Globals.GAME_STATE.MENU)
-
     player = Player()
     enemy_timer = Timer(2, spawnEnemy, 0.1, 2)
 end
 
 function love.update(dt)
     -- Resets if in mainmenu
-    if Globals.current_state == Globals.GAME_STATE.MENU then
+    if GameManager:inMenu() then
         Globals:resetTables()
         player:resetPosition()
         player:resetTimers()
@@ -59,7 +58,7 @@ function love.update(dt)
             table.remove(enemies, i)
         end
     end
-    
+
     -- Bullet updates
     local bullets = Globals:getTable("BULLETS")
     for _, b in ipairs(bullets) do
@@ -119,14 +118,14 @@ function love.draw()
             love.graphics.draw(Globals.SPRITES.LOST_LIFE, 5 + (i - 1) * 30, 50, nil, 2, 2)
         end
     end
-    
+
     -------- ONLY DRAWN IN MAINMENU --------
-    if Globals.current_state == Globals.GAME_STATE.MENU then 
+    if GameManager:inMenu() then 
         love.mouse.setVisible(true)
         love.graphics.setFont(Globals.FONTS.FONTSIZE)
         love.graphics.printf("Click anywhere to begin!", 0, 50, love.graphics.getWidth(), "center")
     -------- ONLY DRAWN IN GAMELOOP --------
-    elseif Globals.current_state == Globals.GAME_STATE.GAME then
+    elseif GameManager:inGame() then
         -- Crosshair
         love.graphics.draw(Globals.SPRITES.CROSSHAIR, love.mouse.getX(), 
         love.mouse.getY(), nil, 0.5, 0.5, Globals.SPRITES.CROSSHAIR:getWidth() / 2,
@@ -140,8 +139,8 @@ end
 
 function love.mousepressed(x, y, button)
     -- Change from mainmenu to game
-    if button == 1 and Globals.current_state == Globals.GAME_STATE.MENU then
-        Globals.setState(Globals.GAME_STATE.GAME)
+    if button == 1 and GameManager:inMenu() then
+        GameManager:setState(GameManager.GAME_STATE.GAME)
         player.experience = 0
         enemy_timer.time = 2
     end

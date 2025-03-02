@@ -1,6 +1,7 @@
 local Entity = require "entity"
 local Utils = require "utils"
 local Globals = require "globals"
+local GameManager= require "gamemanager"
 
 local Player = Entity:extend()
 
@@ -87,7 +88,7 @@ function Player:resetPosition()
 end
 
 function Player:canShoot()
-    if love.mouse.isDown(1) and Globals.current_state == Globals.GAME_STATE.GAME then
+    if love.mouse.isDown(1) and GameManager:inGame() then
         if self.weapon_timer < 0 then
             self.weapon_timer = self.weapon_cd
             return true
@@ -121,7 +122,7 @@ end
 
 function Player:dead()
     if self.lives <= 0 then
-        Globals.setState(Globals.GAME_STATE.MENU)
+        GameManager:setState(GameManager.GAME_STATE.MENU)
         self.lives = 3
     end
 end
