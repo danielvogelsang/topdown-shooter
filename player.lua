@@ -1,6 +1,7 @@
 local Entity = require "entity"
 local Utils = require "utils"
 local Event = require "eventsystem"
+local Timer = require "timer"
 
 local Player = Entity:extend()
 
@@ -13,8 +14,11 @@ function Player:new(x, y, speed)
     Player.super.new(self, player_image, x, y, speed)
     self.max_lives = 3
     self.lives = self.max_lives 
-    self.weapon_cd = 1
-    self.weapon_timer = self.weapon_cd
+    -- weapon cooldown
+    self.can_shoot = false
+    self.fire_rate = 1
+    self.wp_cd_timer = Timer(self.fire_rate, function() self.can_shoot = true end)
+    -- invulnerability
     self.invuln_time = 1
     self.invuln_timer = 0
     self.invulnerable = false
@@ -26,6 +30,7 @@ function Player:update(dt)
     self:handleMovement(dt)
     self:updateTimers(dt)
     self:dead()
+    self:shoot()
 end
 
 function Player:draw()
@@ -86,22 +91,18 @@ function Player:resetPosition()
     self.exp = 0
 end
 
-function Player:canShoot()
-    if love.mouse.isDown(1) then
-        if self.weapon_timer < 0 then
-            self.weapon_timer = self.weapon_cd
-            return true
-        end
-    else 
-        return false
+function Player:shoot()
+    if love.mouse.isDown(1) and self.can_shoot then
+        self.can_shoot = false
+        Event:emit("ShootBullet")
+        self.wp_cd_timer:reset()
     end
 end
 
+
 function Player:updateTimers(dt)
     -- Weapon cooldown
-    if self.weapon_timer and self.weapon_timer > 0 then
-        self.weapon_timer = self.weapon_timer - dt
-    end
+    self.wp_cd_timer:update(dt)
 
     -- Invulnerabilty after getting hit
     if self.invuln_timer and self.invuln_timer > 0 then

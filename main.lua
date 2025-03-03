@@ -13,6 +13,14 @@ math.randomseed(os.time())
 function love.load()
     player = Player()
     enemy_timer = Timer(2, spawnEnemy, 0.1, 2)
+    -- Event listeners
+    Event:on("ShootBullet", function()
+            table.insert(Globals.TABLES.BULLETS, Bullet())
+            end)
+    Event:on("PlayerDied", function()
+            GameManager:setState(GameManager.GAME_STATE.MENU)
+            end
+            )
 end
 
 function love.update(dt)
@@ -21,18 +29,11 @@ function love.update(dt)
         Globals:resetTables()
         player:resetPosition()
         player:resetTimers()
+        return
     end
 
     -- Player updates
     player:update(dt)
-    if player:canShoot() and GameManager:inGame() then
-        table.insert(Globals.TABLES.BULLETS, Bullet())
-    end
-    -- on player death
-    Event:on("PlayerDied", function()
-            GameManager:setState(GameManager.GAME_STATE.MENU)
-            end
-            )
 
     -- Enemy spawn timer
     enemy_timer:update(dt)
@@ -135,7 +136,10 @@ function love.draw()
     end
 
     -- DEBUGGING
-     love.graphics.print(GameManager.current_state, 10, 100)
+     love.graphics.print("State " .. GameManager.current_state, 10, 100)
+     love.graphics.print("Timer: " .. enemy_timer.time, 10, 150)
+     love.graphics.print(#Globals.TABLES.BLOODPOOL, 10, 200)
+     love.graphics.print(#Globals.TABLES.BULLETS, 10, 250)
 
 end
 
