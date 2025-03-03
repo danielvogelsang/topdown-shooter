@@ -7,11 +7,13 @@ local Timer = require "timer"
 local GameManager = require "gamemanager"
 local Event = require "eventsystem"
 local Exp = require "exp"
+local Camera = require "camera"
 
 math.randomseed(os.time())
 
 function love.load()
     player = Player()
+    camera = Camera(player.x, player.y, 1.2)
     enemy_timer = Timer(2, spawnEnemy, 0.1, 2)
     -- Event listeners
     Event:on("ShootBullet", function()
@@ -24,11 +26,13 @@ function love.load()
 end
 
 function love.update(dt)
+    camera:smoothMoveTo(player.x, player.y, dt)
     -- Resets if in mainmenu
     if GameManager:inMenu() then
         Globals:resetTables()
         player:resetPosition()
         player:resetTimers()
+        enemy_timer.time = 2
         return
     end
 
@@ -87,6 +91,7 @@ function love.update(dt)
 end
 
 function love.draw()
+    camera:set()
     -------- ALWAYS DRAWN --------
     -- Background
     love.graphics.draw(Globals.SPRITES.BACKGROUND, 0, 0)
@@ -108,6 +113,9 @@ function love.draw()
     end
     -- Player
     player:draw()
+    camera:unset()
+
+    ---- UI
     -- Exp "bar"
     love.graphics.print("Experience: " .. player.exp, 10, 10)
     -- Lives
@@ -147,8 +155,6 @@ function love.mousepressed(x, y, button)
     -- Change from mainmenu to game
     if button == 1 and GameManager:inMenu() then
         GameManager:setState(GameManager.GAME_STATE.GAME)
-        player.experience = 0
-        enemy_timer.time = 2
     end
 end
 

@@ -33,7 +33,9 @@ function Bullet:handleMovement(dt)
 end
 
 function Bullet:getMouseAngle()
-    return Utils.getAngle(self.x, self.y, love.mouse.getX(), love.mouse.getY())
+    local mouseX, mouseY = love.mouse.getPosition()
+    local worldMouseX, worldMouseY = camera:screenToWorld(mouseX, mouseY)
+    return Utils.getAngle(self.x, self.y, worldMouseX, worldMouseY)
 end
 
 function Bullet:isOutOfScreen()

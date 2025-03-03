@@ -22,7 +22,6 @@ function Player:new(x, y, speed)
     self.invuln_time = 1
     self.invuln_timer = 0
     self.invulnerable = false
-    self.transparence = 1
     self.exp = 0
 end
 
@@ -40,29 +39,31 @@ end
 
 function Player:handleMovement(dt)
     if love.keyboard.isDown("d")  then
-        if self.x + self.offset_width < love.graphics.getWidth() then
+        --if self.x + self.offset_width < love.graphics.getWidth() then
             self.x = self.x + self.speed * dt
-        end
+        --end
     end
     if love.keyboard.isDown("a") then
-        if self.x - self.offset_width > 0  then
+        --if self.x - self.offset_width > 0  then
             self.x = self.x - self.speed * dt
-        end
+        --end
     end
     if love.keyboard.isDown("w") then
-        if self.y - self.offset_width > 0 then
+        --if self.y - self.offset_width > 0 then
             self.y = self.y - self.speed * dt
-        end
+        --end
     end
     if love.keyboard.isDown("s") then
-        if self.y + self.offset_width < love.graphics.getHeight() then
+        --if self.y + self.offset_width < love.graphics.getHeight() then
             self.y = self.y + self.speed * dt
-        end
+        --end
     end
 end
 
 function Player:getMouseAngle()
-    return Utils.getAngle(self.x, self.y, love.mouse.getX(), love.mouse.getY())
+    local mouseX, mouseY = love.mouse.getPosition()
+    local worldMouseX, worldMouseY = camera:screenToWorld(mouseX, mouseY)
+    return Utils.getAngle(self.x, self.y, worldMouseX, worldMouseY)
 end
 
 function Player:getHit(enemy_table)
@@ -106,18 +107,15 @@ function Player:updateTimers(dt)
 
     -- Invulnerabilty after getting hit
     if self.invuln_timer and self.invuln_timer > 0 then
-        self.transparence = 0.5
         self.invuln_timer = self.invuln_timer - dt 
     else
         self.invulnerable = false
-        self.transparence = 1
     end
 end
 
 function Player:resetTimers()
     self.invuln_timer = 0
     self.invulnerable = false
-    self.transparence = 1
 end
 
 function Player:dead()
